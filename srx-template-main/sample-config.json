@@ -1,0 +1,159 @@
+
+groups {
+    Web-Filtering {
+        security {
+            utm {
+                custom-objects {
+                    category-package {
+                        url https://update.juniper-updates.net/EWF;
+                        routing-instance FVRF;
+                        automatic {
+                            start-time "2021-8-27.10:32:00 +1000";
+                            interval 60;
+                            enable;
+                        }
+                    }
+                    base-filter {
+                        ewf-default-filter {
+                            value Predefined-filter-value;
+                        }
+                    }
+                }
+                default-configuration {
+                    web-filtering {
+                        type juniper-enhanced;
+                    }
+                }
+                feature-profile {
+                    web-filtering {
+                        http-reassemble;
+                        http-persist;
+                        juniper-enhanced {
+                            cache {
+                                timeout 1800;
+                                size 500;
+                            }
+                            server {
+                                routing-instance FVRF;
+                            }
+                            profile WF-Public-Internet {
+                                base-filter ewf-default-filter;
+                                category {
+                                    Web-Black-List {
+                                        action block;
+                                    }
+                                    Web-White-List {
+                                        action permit;
+                                    }
+                                    Enhanced_Bandwidth {
+                                        action block;
+                                    }
+                                    Enhanced_Intolerance {
+                                        action quarantine;
+                                    }
+                                    Enhanced_Tasteless {
+                                        action quarantine;
+                                    }
+                                    Enhanced_Media_File_Download {
+                                        action quarantine;
+                                    }
+                                    Enhanced_Sex {
+                                        action block;
+                                    }
+                                    Enhanced_Sex_Education {
+                                        action quarantine;
+                                    }
+                                    Enhanced_Lingerie_and_Swimsuit {
+                                        action quarantine;
+                                    }
+                                    Enhanced_Private_IP_Addresses {
+                                        action quarantine;
+                                    }
+                                    Enhanced_File_Download_Servers {
+                                        action quarantine;
+                                    }
+                                    Enhanced_Application_and_Software_Download {
+                                        action block;
+                                    }
+                                }
+                                site-reputation-action {
+                                    very-safe permit;
+                                    moderately-safe log-and-permit;
+                                    fairly-safe log-and-permit;
+                                    suspicious quarantine;
+                                    harmful block;
+                                }
+                                default log-and-permit;
+                                fallback-settings {
+                                    default log-and-permit;
+                                }
+                                block-message {
+                                    url http://google.com;
+                                }
+                            }
+                            profile WF-Staff {
+                                base-filter ewf-default-filter;
+                                category {
+                                    Web-Black-List {
+                                        action block;
+                                    }
+                                    Web-White-List {
+                                        action permit;
+                                    }
+                                    Enhanced_Facebook_Apps {
+                                        action block;
+                                    }
+                                    Enhanced_Facebook_Chat {
+                                        action block;
+                                    }
+                                    Enhanced_Facebook_Games {
+                                        action block;
+                                    }
+                                    Enhanced_Facebook_Mail {
+                                        action block;
+                                    }
+                                    Enhanced_Facebook_Video_Upload {
+                                        action block;
+                                    }
+                                    Enhanced_Tasteless {
+                                        action block;
+                                    }
+                                    Enhanced_Twitter_Mail {
+                                        action block;
+                                    }
+                                    Enhanced_Linkedin_Mail {
+                                        action block;
+                                    }
+                                    Enhanced_Office_Mail {
+                                        action block;
+                                    }
+                                }
+                                site-reputation-action {
+                                    very-safe permit;
+                                    moderately-safe log-and-permit;
+                                    fairly-safe log-and-permit;
+                                    suspicious quarantine;
+                                    harmful block;
+                                }
+                                default log-and-permit;
+                                fallback-settings {
+                                    default log-and-permit;
+                                }
+                            }
+                        }
+                    }
+                }
+                utm-policy Staff {
+                    web-filtering {
+                        http-profile WF-Staff;
+                    }
+                }
+                utm-policy Public {
+                    web-filtering {
+                        http-profile WF-Public-Internet;
+                    }
+                }
+            }
+        }
+    }
+}
