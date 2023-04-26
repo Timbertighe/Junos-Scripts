@@ -16,11 +16,14 @@ Restrictions:
 
 To Do:
     Secure juniper and FTP credentials
-    Handle error if NETCONF is not configured
-    Return better connection errors to main()
+
+Changes:
+    Updated the shell to connect using 'with'
+    Updated the 'cli -c' command
+    Enabled passing a timer to send_shell()
 
 Author:
-    Luke Robertson - February 2023
+    Luke Robertson - April 2023
 """
 
 
@@ -34,12 +37,12 @@ from jnpr.junos.utils.start_shell import StartShell
 import jnpr.junos.exception
 
 
-J_HOST = "my-junos-host"
+J_HOST = "10.0.0.1"
 J_USER = "admin"
 J_PASSWORD = "password"
-FTP_HOST = "10.1.1.15/backups"
-FTP_USER = "ftp_admin"
-FTP_PASS = "ftp_password"
+FTP_HOST = "10.10.20.1/backups"
+FTP_USER = "admin"
+FTP_PASS = "password"
 
 
 # Connect to a Junos device
@@ -53,17 +56,27 @@ def junos_connect(host, user, password):
 
 # Send shell commands to the device
 # Take the command to run, as well as the shell object
-def send_shell(cmd, dev):
+def send_shell(cmd, dev, **kwargs):
+    # Check for additional args
+    #   'timeout' is the time to spend waiting for a response
+    #   'this' is the expected output to look for
+    #   https://junos-pyez.readthedocs.io/en/2.6.4/jnpr.junos.utils.html#module-jnpr.junos.utils.start_shell
+    if 'timeout' in kwargs:
+        timeout = kwargs['timeout']
+    else:
+        timeout = 60
+
     # Print the command we're going to run
     print(termcolor.colored(cmd, "yellow"))
 
     # Convert the raw junos command to something the API can work with
-    command = f'cli -c "{cmd}"'
+    command = f'cli -c \'{cmd}\''
 
-    # Connect to the device shell (for sending CLI commands)
+    # Send the command
     try:
-        shell = StartShell(dev, timeout=60)
-        shell.open()
+        with StartShell(dev, timeout=timeout) as shell:
+            output = shell.run(command)
+
     except jnpr.junos.exception.ConnectError as err:
         print(termcolor.colored(
             'There was an error connecting to the Junos shell: ' + repr(err),
@@ -71,9 +84,6 @@ def send_shell(cmd, dev):
         ))
         return err
 
-    # Attempt the command
-    try:
-        output = shell.run(command)
     except Exception as err:
         print('An error has occurred')
         print('Sometimes a device will get busy and reject the attempt')
@@ -148,15 +158,16 @@ def main(host):
     hostname = dev.facts['hostname']
 
     # Request the device to generate the support file
+    #   The timeout is set high, as it can take a long time to collect RSI
+    #    on some platforms
     rsi_filename = f'/var/log/RSI-Support-{hostname}-{date}.txt'
     print(termcolor.colored(f'RSI filename: {rsi_filename}', 'green'))
     result = send_shell(
         f'request support information | save {rsi_filename}',
-        dev
+        dev,
+        timeout=1800
     )
-    if not isinstance(result, str):
-        error_handler(result)
-        return False
+    print(result)
 
     # Request the device to create an archive of the logs
     log_filename = f'/var/tmp/Support-{hostname}-{date}.tgz'
@@ -184,4 +195,5 @@ def main(host):
 
 # Entry point
 if __name__ == "__main__":
+    print(termcolor.colored("Starting...", "green"))
     main(J_HOST)
