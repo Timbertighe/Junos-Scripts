@@ -16,3 +16,6 @@ Script templates to automate Junos tasks
     Restarts a junos process
     Optionally pass 'immediately=True' to use SIGKILL
     
+## packet_fragmentation.py
+    Connect to an SRX, and get packet fragmentation counters
+    A filtered version of 'show system statistics'
